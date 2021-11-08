@@ -5,4 +5,4 @@ flask_limiter
 waitress
 folium
 pyproj
-git+ssh://git@github.com:urasakikeisuke/pyflann.git
+git+https://github.com/urasakikeisuke/pyflann.git
