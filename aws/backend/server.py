@@ -62,16 +62,10 @@ class RenderMap:
                 popup = Popup(data[DATABASE_DESCRIPTION], min_width=0, max_width=1000)
                 Marker(location=[data[DATABASE_LATITUDE], data[DATABASE_LONGITUDE]], popup=popup).add_to(map)
 
+            os.remove(os.path.abspath(config[CONFIG_MAP_HTML_PATH]))
             map.save(os.path.abspath(config[CONFIG_MAP_HTML_PATH]))
 
             time.sleep(interval)
-
-
-def _is_inside(x: float, y: float, center_x: float, center_y: float, radius: float) -> bool:
-    if (((center_x - x) ** 2) + ((center_y - y) ** 2)) <= (radius ** 2):
-        return True
-    else:
-        return False
 
 
 @app.route('/data', methods=["POST"])
