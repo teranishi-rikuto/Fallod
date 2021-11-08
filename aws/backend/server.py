@@ -43,6 +43,7 @@ database_for_flann: List[float] = [
 
 transformer: Transformer = Transformer.from_crs("epsg:4326", "epsg:6675")
 
+global_counter: int = 0
 
 class RenderMap:
     def __init__(
@@ -62,8 +63,14 @@ class RenderMap:
                 pprint(data)
                 popup = Popup(data[DATABASE_DESCRIPTION], min_width=0, max_width=1000)
                 Marker(location=[data[DATABASE_LATITUDE], data[DATABASE_LONGITUDE]], popup=popup).add_to(map)
-            os.remove(os.path.abspath(config[CONFIG_MAP_HTML_PATH]))
-            map.save(os.path.abspath(config[CONFIG_MAP_HTML_PATH]))
+
+            global global_counter
+            print(global_counter)
+            if global_counter > 0:
+                os.remove(os.path.join(os.path.abspath(config[CONFIG_MAP_HTML_PATH]), f"map-{global_counter-1}.html"))
+            map.save(os.path.join(os.path.abspath(config[CONFIG_MAP_HTML_PATH]), f"map-{global_counter}.html"))
+
+            global_counter += 1
 
             time.sleep(interval)
 
@@ -102,7 +109,7 @@ def main() -> Response:
 
         print(dists)
 
-        if dists < config[CONFIG_DANGER_AREA_RANGE]:
+        if dists[0] < config[CONFIG_DANGER_AREA_RANGE]:
             responses[RESPONSE_IS_INSIDE] = True
 
 
@@ -111,7 +118,10 @@ def main() -> Response:
 
 @app.route('/')
 def index() -> Response:
-    return render_template(os.path.basename(config[CONFIG_MAP_HTML_PATH]), title="sony", name="sony")
+    if global_counter > 0:
+        return render_template(f"map-{global_counter-1}.html", title="sony", name="sony")
+    else:
+        return render_template(f"defalut.html", title="sony", name="sony")
 
 
 if __name__ == "__main__":
