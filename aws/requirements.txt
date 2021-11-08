@@ -3,3 +3,6 @@ Flask
 flask-cors
 flask_limiter
 waitress
+folium
+pyproj
+git+ssh://git@github.com:urasakikeisuke/pyflann.git
