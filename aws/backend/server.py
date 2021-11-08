@@ -57,11 +57,11 @@ class RenderMap:
             map = Map(location=[35.1356448, 136.9760683], zoom_start=16)
 
             from pprint import pprint
-            pprint(database)
+            
             for data in database:
+                pprint(data)
                 popup = Popup(data[DATABASE_DESCRIPTION], min_width=0, max_width=1000)
                 Marker(location=[data[DATABASE_LATITUDE], data[DATABASE_LONGITUDE]], popup=popup).add_to(map)
-
             os.remove(os.path.abspath(config[CONFIG_MAP_HTML_PATH]))
             map.save(os.path.abspath(config[CONFIG_MAP_HTML_PATH]))
 
