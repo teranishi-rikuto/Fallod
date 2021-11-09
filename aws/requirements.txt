@@ -1,0 +1,8 @@
+setuptools
+Flask
+flask-cors
+flask_limiter
+waitress
+folium
+pyproj
+git+https://github.com/urasakikeisuke/pyflann.git
