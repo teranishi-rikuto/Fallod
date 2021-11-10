@@ -75,7 +75,7 @@ class RenderMap:
             time.sleep(interval)
 
 
-@app.route('/data', methods=["POST"])
+@app.route('/', methods=["POST"])
 def main() -> Response:
     requests: Dict[str, str] = request.get_json(force=True)
 
@@ -116,7 +116,7 @@ def main() -> Response:
     return make_response(jsonify(responses))
 
 
-@app.route('/')
+@app.route('/map')
 def index() -> Response:
     if global_counter > 0:
         return render_template(f"map-{global_counter-1}.html", title="sony", name="sony")
