@@ -4,6 +4,7 @@ import os
 import time
 from threading import Lock, Thread
 from typing import Dict, List, Union
+from pprint import pprint
 
 import numpy
 from flask import Flask, Response, jsonify, render_template, request
@@ -57,12 +58,12 @@ class RenderMap:
         while True:
             map = Map(location=[35.1356448, 136.9760683], zoom_start=16)
 
-            from pprint import pprint
-            
             for data in database:
                 pprint(data)
                 popup = Popup(data[DATABASE_DESCRIPTION], min_width=0, max_width=1000)
                 Marker(location=[data[DATABASE_LATITUDE], data[DATABASE_LONGITUDE]], popup=popup).add_to(map)
+
+            print()
 
             global global_counter
             print(global_counter)
@@ -78,6 +79,8 @@ class RenderMap:
 @app.route('/', methods=["POST"])
 def main() -> Response:
     requests: Dict[str, str] = request.get_json(force=True)
+
+    pprint(requests)
 
     responses: Dict[str, bool] = {
         RESPONSE_IS_INSIDE: False,
@@ -106,8 +109,6 @@ def main() -> Response:
         flann: FLANN = FLANN()
         flann.build_index(numpy.array(database_for_flann))
         _, dists = flann.nn_index(numpy.array([x, y]), num_neighbors=1)
-
-        print(dists)
 
         if dists[0] < config[CONFIG_DANGER_AREA_RANGE]:
             responses[RESPONSE_IS_INSIDE] = True
