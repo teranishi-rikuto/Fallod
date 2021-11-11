@@ -51,15 +51,12 @@
 // URL, path & port (for example: httpbin.org)
 char server[] = "54.199.101.204";
 char getPath[] = "/get";
-char postPath[] = "/post";
+char postPath[] = "/";
 int port = 5000; // port 443 is the default for HTTPS
-
-#define ROOTCA_FILE "CERTS/line-me.pem"   // Define the path to a file containing CA 
-                                       // certificates that are trusted.
 
 // initialize the library instance
 LTE lteAccess;
-LTETLSClient tlsClient;
+LTEClient tlsClient;
 HttpClient client = HttpClient(tlsClient, server, port);
 SDClass theSD;
 SpGnss Gnss;
@@ -141,6 +138,11 @@ void setup()
   assert(result == 0);
   Serial.println("Gnss setup OK");
 
+  lte_setup();
+}
+
+void lte_setup()
+{
   // Wait for the modem to connect to the LTE network.
   Serial.println("Waiting for successful attach.");
   LTEModemStatus modemStatus = lteAccess.getStatus();
@@ -172,15 +174,11 @@ void setup()
   RtcTime rtc(currentTime);
   printClock(rtc);
   RTC.setTime(rtc);
-
-  File rootCertsFile = theSD.open(ROOTCA_FILE, FILE_READ);
-  tlsClient.setCACert(rootCertsFile, rootCertsFile.available());
-  rootCertsFile.close();
 }
 
-void loop()
-{
-  // Set certifications via a file on the SD card before connecting to the server
+void GNSS(){
+  String contentType ="application/json ; charset=utf-8";
+  
   if (Gnss.waitUpdate(-1)){
     SpNavData navData;
     Gnss.getNavData(&navData);
@@ -188,34 +186,44 @@ void loop()
     if (posFix){
       Serial.println("Position is fixed");
       String nmeaString = getNmeaGga(&navData);
+      String contentType ="application/json ; charset=utf-8";
+      float lati = navData.latitude;
+      //float lati = 35.0000000000000000;
+      float longi = navData.longitude;
+      //float longi = 135.000000000000000;
+      
+      String data1 = String("\"latitude\":") + String(lati,9) + String(",");
+      String data2 = String("\"longitude\":") + String(longi,9) + String(",");
+      String data3 = String("\"is_fell\":") + String("true"); 
+
+      String moji = String("{")+data1+data2+data3+String("}");
+      Serial.print(moji);
+      String postData = moji;
+      //String postData = "{\"latitude\":navData.latitude,\"longitude\":navData.longitude,\"is_fell\":\"true\"}";
+      Serial.print("Connection to Server");
+      client.post(postPath, contentType, postData);
       int statusCode = client.responseStatusCode();
       String response = client.responseBody();
       Serial.print("Status code: ");
       Serial.println(statusCode);
       Serial.print("Response: ");
       Serial.println(response);
-      Serial.println("Wait five seconds");
-      sleep(5);
-  
-      String contentType ="application/json";
-      String postData = "{\"latitude\":navData.latitude,\"longitude\":navData.longitude,\"is_fell\":True}";
-      if (client.connect(server, port) == 0){
-       Serial.println("connection Failed");
-       return;
+      int i = 0;
+      while(i < 10){
+        client.flush();
+        i++;
       }
-      Serial.print("Connection to Server");
-      client.post(postPath, contentType, postData);
-      statusCode = client.responseStatusCode();
-      response = client.responseBody();
-      Serial.print("Status code: ");
-      Serial.println(statusCode);
-      Serial.print("Response: ");
-      Serial.println(response);
-      Sleep(20);
+      client.stop();
+      sleep(15);
     }else{
       Serial.println("position is not fixed");
     }
+
+    lte_setup();
   }
+}
 
-
+void loop()
+{
+  GNSS();
 }
