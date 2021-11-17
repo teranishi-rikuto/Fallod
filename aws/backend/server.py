@@ -2,11 +2,14 @@
 
 import os
 import time
+import json
 from threading import Lock, Thread
 from typing import Dict, List, Union
 from pprint import pprint
 
+import git 
 import numpy
+from git.exc import GitCommandError
 from flask import Flask, Response, jsonify, render_template, request
 from flask.helpers import make_response
 from flask_cors import CORS
@@ -33,14 +36,24 @@ CORS(app)
 
 _lock: Lock = Lock()
 
-database: List[Dict[str, Union[str, float]]] = [{
-    DATABASE_DESCRIPTION: "説明",
-    DATABASE_LATITUDE: 35.1356448,
-    DATABASE_LONGITUDE: 136.9760683,
-}]
-database_for_flann: List[float] = [
-    [-95874.87170693283, -17368.887856112502],
-]
+database: List[Dict[str, Union[str, float]]]
+if os.path.exists("../data/database.json"):
+    with open("../data/database.json") as f:
+        database = json.load(f)
+else:
+    database = [{
+        DATABASE_DESCRIPTION: "説明",
+        DATABASE_LATITUDE: 35.1356448,
+        DATABASE_LONGITUDE: 136.9760683,
+    }]
+database_for_flann: List[List[float]]
+if os.path.exists("../data/database_for_flann.json"):
+    with open("../data/database_for_flann.json") as f:
+        database_for_flann = json.load(f)
+else:
+    database_for_flann = [
+        [-95874.87170693283, -17368.887856112502],
+    ]
 
 transformer: Transformer = Transformer.from_crs("epsg:4326", "epsg:6675")
 
@@ -72,6 +85,41 @@ class RenderMap:
             map.save(os.path.join(os.path.abspath(config[CONFIG_MAP_HTML_PATH]), f"map-{global_counter}.html"))
 
             global_counter += 1
+
+            time.sleep(interval)
+
+
+class PushDatabase:
+    def __init__(
+        self,
+        interval: float = 30.,
+    ) -> None:
+        p: Thread = Thread(target=self.run, args=(interval, ), daemon=True)
+        p.start()
+
+        self.repo = git.Repo(os.path.expanduser("~/sony_hackathon"))
+
+    def run(self, interval: float) -> None:
+        while True:
+            with open(os.path.expanduser('~/sony_hackathon/aws/data/database.json'), 'w') as f:
+                json.dump(database, f, indent=4, ensure_ascii=False)
+
+            with open(os.path.expanduser('~/sony_hackathon/aws/data/database_for_flann.json'), 'w') as f:
+                json.dump(database_for_flann, f, indent=4, ensure_ascii=False)
+            
+            try:
+                self.repo.git.add(os.path.expanduser('~/sony_hackathon/aws/data/database.json'))
+                self.repo.git.commit(os.path.expanduser('~/sony_hackathon/aws/data/database.json'), message='update', author='urasaki')
+                self.repo.git.push('origin', 'main')
+            except (GitCommandError, AttributeError):
+                pass
+
+            try:
+                self.repo.git.add(os.path.expanduser('~/sony_hackathon/aws/data/database_for_flann.json'))
+                self.repo.git.commit(os.path.expanduser('~/sony_hackathon/aws/data/database_for_flann.json'), message='update', author='urasaki')
+                self.repo.git.push('origin', 'main')
+            except (GitCommandError, AttributeError):
+                pass
 
             time.sleep(interval)
 
@@ -118,7 +166,7 @@ def main() -> Response:
 
 
 @app.route('/map')
-def index() -> Response:
+def index() -> str:
     if global_counter > 0:
         return render_template(f"map-{global_counter-1}.html", title="sony", name="sony")
     else:
@@ -127,5 +175,6 @@ def index() -> Response:
 
 if __name__ == "__main__":
     RenderMap()
+    PushDatabase()
 
-    serve(app, host='0.0.0.0', port=5000, threads=30)
+    serve(app, host='0.0.0.0', port=5000, threads=1)
