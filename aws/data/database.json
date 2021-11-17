@@ -698,5 +698,15 @@
         "description": "説明",
         "latitude": 35.0,
         "longitude": 135.0
+    },
+    {
+        "description": "説明",
+        "latitude": 35.0,
+        "longitude": 135.0
+    },
+    {
+        "description": "説明",
+        "latitude": 35.0,
+        "longitude": 135.0
     }
 ]
