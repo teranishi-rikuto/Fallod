@@ -176,21 +176,23 @@ void lte_setup()
   RTC.setTime(rtc);
 }
 
-void GNSS(){
+String GNSS(){
   String contentType ="application/json ; charset=utf-8";
   
+  
   if (Gnss.waitUpdate(-1)){
+    String answer = "0";
     SpNavData navData;
     Gnss.getNavData(&navData);
-    bool posFix = ((navData.posDataExist) && (navData.posFixMode != FixInvalid));
+    bool posFix = true;//((navData.posDataExist) && (navData.posFixMode != FixInvalid));
     if (posFix){
       Serial.println("Position is fixed");
       String nmeaString = getNmeaGga(&navData);
       String contentType ="application/json ; charset=utf-8";
-      float lati = navData.latitude;
-      //float lati = 35.0000000000000000;
-      float longi = navData.longitude;
-      //float longi = 135.000000000000000;
+      //float lati = navData.latitude;
+      float lati = 35.0000000000000000;
+      //float longi = navData.longitude;
+      float longi = 135.000000000000000;
       
       String data1 = String("\"latitude\":") + String(lati,9) + String(",");
       String data2 = String("\"longitude\":") + String(longi,9) + String(",");
@@ -208,22 +210,29 @@ void GNSS(){
       Serial.println(statusCode);
       Serial.print("Response: ");
       Serial.println(response);
-      int i = 0;
-      while(i < 10){
+      for (int i=0; i < 10; i++) {
         client.flush();
-        i++;
+      }
+      Serial.println(response.indexOf("false"));
+      if (response.indexOf("false") != -1){
+        answer = "1";
+        Serial.println(answer);
+        Serial.println("aaaaaa");
+      }else {
+        answer = "2";
+        Serial.println(answer);
       }
       client.stop();
-      sleep(15);
     }else{
       Serial.println("position is not fixed");
     }
-
-    lte_setup();
+    return answer;
   }
 }
 
 void loop()
 {
-  GNSS();
+  String answer = GNSS();
+  Serial.println(answer);
+  sleep(5);
 }
