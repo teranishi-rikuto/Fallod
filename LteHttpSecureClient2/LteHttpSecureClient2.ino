@@ -50,6 +50,7 @@ bool step_counter_result(sensor_command_data_mh_t &data);
 
 int intPin=4;
 int gCounter=0;
+int Mpin=6;
 
 bool stopping = true;
 
@@ -317,6 +318,8 @@ void doAttach()
 
 void setup()
 {
+  pinMode(Mpin, OUTPUT);
+  digitalWrite(Mpin,LOW);
   // initialize serial communications and wait for port to open:
   Serial.begin(115200);
   while (!Serial) {
@@ -473,11 +476,15 @@ String GNSS(String result){
       Serial.println(response.indexOf("false"));
       if (response.indexOf("false") != -1){
         answer = "1";
-        Serial.println(answer);
-        Serial.println("aaaaaa");
-      }else {
+        Serial.println("座標登録");
+      }
+      else if(response.indexOf("true")!= -1){
         answer = "2";
-        Serial.println(answer);
+        Serial.println("領域展開");
+      }
+      else{
+        answer = "3";
+        Serial.println("Response Error");
       }
       client.stop();
     }else{
@@ -485,6 +492,16 @@ String GNSS(String result){
     }
     return answer;
   }
+}
+
+void Moter(){
+  int counter=0;
+  
+  digitalWrite(Mpin, HIGH);
+  while(counter < 50){
+    counter++;
+  }
+  digitalWrite(Mpin, LOW);
 }
 
 void loop()
@@ -555,15 +572,16 @@ void loop()
   {
     printf("Gyro_Moving\n");
 
-    float diff = pressure-B_pressure;
+    float diff = pressure - B_pressure;
     printf("%lf\n",diff);
-    if(diff > 9.5)//気圧が高くなった場合
+    if(diff > 1.0 && abs(gz) > 70)//気圧が高くなった場合
     {
       
       printf("------fall down?---------\n");
       printf("%lf\n",diff);
       result = "True";
     }
+    B_pressure = pressure;
   
     
     
@@ -579,11 +597,18 @@ void loop()
   }
   
   answer=GNSS(result);
-  Serial.println("Fall Down signal\n");
+  Serial.println("result");
   Serial.println(answer);
+  Serial.println("Fall Down signal");
+  if(answer.indexOf("2") == -1){
+    Serial.println("Not fall down");    
+  }
+  else{
+    Moter();
+  }
 }
 
-
+/*
 void Camera(){
   
   CamImage img = theCamera.takePicture();
@@ -616,7 +641,7 @@ void Camera(){
 }
 
 
-
+*/
 
 
 /**
