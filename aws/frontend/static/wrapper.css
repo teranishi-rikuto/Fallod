@@ -1,0 +1,9 @@
+* {
+    overflow: hidden;
+    height: 100vh;
+}
+
+iframe {
+    border: none;
+    width: 100%;
+}

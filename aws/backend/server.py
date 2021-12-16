@@ -6,6 +6,7 @@ import json
 from threading import Lock, Thread
 from typing import Dict, List, Union
 from pprint import pprint
+from folium.map import Icon
 
 import git 
 import numpy
@@ -15,7 +16,8 @@ from flask.helpers import make_response
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from folium import Map, Marker, Popup
+from folium import Map, Marker, Popup, Circle, LayerControl
+from folium.raster_layers import TileLayer
 from pyproj import Transformer
 from pyflann import FLANN
 from waitress import serve
@@ -42,17 +44,18 @@ if os.path.exists("../data/database.json"):
         database = json.load(f)
 else:
     database = [{
-        DATABASE_DESCRIPTION: "説明",
-        DATABASE_LATITUDE: 35.1356448,
-        DATABASE_LONGITUDE: 136.9760683,
+        DATABASE_DESCRIPTION: "dummy",
+        DATABASE_LATITUDE: 0.0,
+        DATABASE_LONGITUDE: 0.0,
     }]
+
 database_for_flann: List[List[float]]
 if os.path.exists("../data/database_for_flann.json"):
     with open("../data/database_for_flann.json") as f:
         database_for_flann = json.load(f)
 else:
     database_for_flann = [
-        [-95874.87170693283, -17368.887856112502],
+        [0.0, 0.0],
     ]
 
 transformer: Transformer = Transformer.from_crs("epsg:4326", "epsg:6675")
@@ -72,16 +75,60 @@ class RenderMap:
             map = Map(location=[35.1356448, 136.9760683], zoom_start=16)
 
             for data in database:
-                pprint(data)
-                popup = Popup(data[DATABASE_DESCRIPTION], min_width=0, max_width=1000)
-                Marker(location=[data[DATABASE_LATITUDE], data[DATABASE_LONGITUDE]], popup=popup).add_to(map)
-
-            print()
+                if data[DATABASE_DESCRIPTION] == "ユーザーが転倒した地点":
+                    popup = Popup(data[DATABASE_DESCRIPTION], min_width=0, max_width=1000)
+                    Circle(location=[data[DATABASE_LATITUDE], data[DATABASE_LONGITUDE]], radius=config[CONFIG_DANGER_AREA_RANGE], popup=popup, color='#3186cc', fill_color='#3186cc').add_to(map)
+                
+                else:
+                    popup = Popup(data[DATABASE_DESCRIPTION], min_width=0, max_width=1000)
+                    icon = Icon(color="orange")
+                    Marker(location=[data[DATABASE_LATITUDE], data[DATABASE_LONGITUDE]], popup=popup, icon=icon).add_to(map)
 
             global global_counter
-            print(global_counter)
             if global_counter > 0:
                 os.remove(os.path.join(os.path.abspath(config[CONFIG_MAP_HTML_PATH]), f"map-{global_counter-1}.html"))
+
+            tsunami_tile = TileLayer(
+                tiles='https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png',
+                fmt='image/png',
+                attr="津波浸水想定",
+                name="津波浸水想定",
+                tms=False,
+                overlay=True,
+                control=True,
+                show=False,
+                opacity=0.7
+            )
+            tsunami_tile.add_to(map)
+
+            flood_tile = TileLayer(
+                tiles='https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/{z}/{x}/{y}.png',
+                fmt='image/png',
+                attr="洪水浸水想定",
+                name="洪水浸水想定",
+                tms=False,
+                overlay=True,
+                control=True,
+                show=False,
+                opacity=0.7
+            )
+            flood_tile.add_to(map)
+
+            sediment_tile = TileLayer(
+                tiles='https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png',
+                fmt='image/png',
+                attr="土砂災害警戒区域",
+                name="土砂災害警戒区域",
+                tms=False,
+                overlay=True,
+                control=True,
+                show=False,
+                opacity=0.7
+            )
+            sediment_tile.add_to(map)
+
+            LayerControl().add_to(map)
+            map.save(os.path.join(os.path.abspath(config[CONFIG_MAP_HTML_PATH]), f"map.html"))
             map.save(os.path.join(os.path.abspath(config[CONFIG_MAP_HTML_PATH]), f"map-{global_counter}.html"))
 
             global_counter += 1
@@ -109,14 +156,9 @@ class PushDatabase:
             
             try:
                 self.repo.git.add(os.path.expanduser('~/sony_hackathon/aws/data/database.json'))
-                self.repo.git.commit(os.path.expanduser('~/sony_hackathon/aws/data/database.json'), message='update', author='urasaki')
-                self.repo.git.push('origin', 'main')
-            except (GitCommandError, AttributeError):
-                pass
-
-            try:
                 self.repo.git.add(os.path.expanduser('~/sony_hackathon/aws/data/database_for_flann.json'))
-                self.repo.git.commit(os.path.expanduser('~/sony_hackathon/aws/data/database_for_flann.json'), message='update', author='urasaki')
+                self.repo.git.commit(os.path.expanduser('~/sony_hackathon/aws/data/database.json'), message='update', author='anonymous')
+                self.repo.git.commit(os.path.expanduser('~/sony_hackathon/aws/data/database_for_flann.json'), message='update', author='anonymous')
                 self.repo.git.push('origin', 'main')
             except (GitCommandError, AttributeError):
                 pass
@@ -143,7 +185,7 @@ def main() -> Response:
         _lock.acquire()
 
         data: Dict[str, Union[str, float]] = {
-            DATABASE_DESCRIPTION: "説明",
+            DATABASE_DESCRIPTION: "ユーザーが転倒した地点",
             DATABASE_LATITUDE: latitude,
             DATABASE_LONGITUDE: longitude,
         }
@@ -166,15 +208,29 @@ def main() -> Response:
 
 
 @app.route('/map')
-def index() -> str:
+def index_map() -> str:
     if global_counter > 0:
-        return render_template(f"map-{global_counter-1}.html", title="sony", name="sony")
+        return render_template(f"wrapper.html", title="fallod", name="fallod")
     else:
-        return render_template(f"defalut.html", title="sony", name="sony")
+        return render_template(f"defalut.html", title="fallod", name="fallod")
+
+@app.route('/map.html')
+def render_map() -> str:
+    if global_counter > 0:
+        return render_template(f"map.html", title="fallod", name="fallod")
+    else:
+        return render_template(f"defalut.html", title="fallod", name="fallod")
+
+@app.route('/map-raw')
+def index_map_raw() -> str:
+    if global_counter > 0:
+        return render_template(f"map-{global_counter-1}.html", title="fallod", name="fallod")
+    else:
+        return render_template(f"defalut.html", title="fallod", name="fallod")
 
 
 if __name__ == "__main__":
     RenderMap()
-    PushDatabase()
+    # PushDatabase()
 
-    serve(app, host='0.0.0.0', port=5000, threads=1)
+    serve(app, host='0.0.0.0', port=5000, threads=4)
