@@ -13,6 +13,7 @@
 
 4.LteHttpSecureClient2.inoをMAINCORE上で、Sub1.inoをSubCore1上でスケッチをマイコンに書き込みます。
 
+## センサーについて
 この製品を扱うにあたって、SPRESENSEとセンサーの接続は以下の画像を参考にしてください。
 
 ![接続](./image/image1.png)
