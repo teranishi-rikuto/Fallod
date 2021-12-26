@@ -14,6 +14,13 @@
 
 4.LteHttpSecureClient2.inoをMAINCORE上で、Sub1.inoをSubCore1上でスケッチをマイコンに書き込みます。
 
+## クラウド側インストール方法と使い方
+```bash
+bash aws/insatll.sh # Install requirement packages and modules
+
+cd aws/backend && python3 server.py # Run the server
+```
+
 ## センサーについて
 この製品を扱うにあたって、SPRESENSEとセンサーの接続は以下の画像を参考にしてください。
 
