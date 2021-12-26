@@ -38,7 +38,7 @@ Fallodはベルトやポケットに装着して下さい。
 
 ## クラウド側インストール方法と使い方
 ```bash
-bash aws/insatll.sh # Install requirement packages and modules
+bash aws/install.sh # Install requirement packages and modules
 
 cd aws/backend && python3 server.py # Run the server
 ```
