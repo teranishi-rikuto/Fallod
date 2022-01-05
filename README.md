@@ -57,5 +57,3 @@ cd aws/backend && python3 server.py # Run the server
 詳しくは以下の動画をご覧ください
 
 [![movie1](./image/black.jpg)](https://user-images.githubusercontent.com/81947271/148170040-2738030f-c408-425b-b16f-2786e965dcb3.mp4)
-
-[![movie2](./image/black.jpg)](https://user-images.githubusercontent.com/81947271/148170327-fd184783-c48f-4dee-817d-71a2eb070778.mp4)
