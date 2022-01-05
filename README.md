@@ -56,4 +56,4 @@ cd aws/backend && python3 server.py # Run the server
 
 詳しくは以下の動画をご覧ください
 
-![movie1](./image/black.jpg)(./image/メイン1.mp4)
+[![movie1](./image/black.jpg)](./image/メイン1.mp4)
