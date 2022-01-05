@@ -53,3 +53,7 @@ cd aws/backend && python3 server.py # Run the server
 ・地図上への座標記録
 
 ・ユーザーへの危険通知
+
+詳しくは以下の動画をご覧ください
+
+![movie1](./image/メイン1.mp4)
