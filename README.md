@@ -57,3 +57,9 @@ cd aws/backend && python3 server.py # Run the server
 詳しくは以下の動画をご覧ください
 
 [![movie1](./image/black.jpg)](https://user-images.githubusercontent.com/81947271/148170040-2738030f-c408-425b-b16f-2786e965dcb3.mp4)
+
+## システムモデル
+
+本製品のシステム構成のイメージ図は以下の通りです。
+
+![system](./image/system.png)
